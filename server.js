@@ -7,17 +7,30 @@ app.use(express.json());
 
 const CONFIG = {
   region: 'cn-east-3',
+  domainName: 'cui294831374',
   deviceId: '6a213cd018855b39c520d0e5_d001',
-  deviceSecret: '12c4255a04ced6767c87da6effae681a46d409914b80cf03162546116b7d91a8'
+  accessKey: 'HPUAUDBP2LC4KD0WIK5R',
+  secretKey: 'lDFwQ8aq555lmSjZpzgSAm2CZL3FrSaFxnkKa0c3'
 };
 
 function getToken() {
   return new Promise((resolve, reject) => {
     const https = require('https');
+    
     const body = JSON.stringify({
       auth: {
-        identity: { methods: ['device_sae'], device_sae: { device_id: CONFIG.deviceId, secret: CONFIG.deviceSecret } },
-        scope: { project: { name: CONFIG.region } }
+        identity: {
+          methods: ['access_key'],
+          access_key: {
+            access_key: CONFIG.accessKey,
+            secret_key: CONFIG.secretKey
+          }
+        },
+        scope: {
+          project: {
+            name: CONFIG.region
+          }
+        }
       }
     });
 
@@ -25,7 +38,10 @@ function getToken() {
       hostname: `iam.${CONFIG.region}.myhuaweicloud.com`,
       path: '/v3/auth/token',
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(body)
+      }
     };
 
     const req = https.request(options, (res) => {
@@ -50,12 +66,18 @@ async function getDeviceShadow(token) {
       hostname: `iotda.${CONFIG.region}.myhuaweicloud.com`,
       path: `/v5/iot/${CONFIG.deviceId}/device-shadow`,
       method: 'GET',
-      headers: { 'X-Auth-Token': token }
+      headers: { 
+        'X-Auth-Token': token,
+        'Content-Type': 'application/json'
+      }
     };
     const req = https.request(options, (res) => {
       let data = '';
       res.on('data', chunk => data += chunk);
-      res.on('end', () => { try { resolve(JSON.parse(data)); } catch (e) { reject(e); } });
+      res.on('end', () => {
+        try { resolve(JSON.parse(data)); } 
+        catch (e) { reject(e); }
+      });
     });
     req.on('error', reject);
     req.end();
